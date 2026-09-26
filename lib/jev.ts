@@ -1,10 +1,11 @@
-import { ANSWER_QUESTION, ANSWER_QUESTION_ID, JEV_MODEL, answerState } from "./answer";
+import { ANSWER_QUESTION, ANSWER_QUESTION_ID, answerState } from "./answer";
 import type { Scene } from "./lesson";
+import { jevConnection } from "./jev-connection.mjs";
 
 // Server-only. Asks TypeSafe's Jev the single Noul question defined in
 // lib/answer.ts. The credential and every provider response body stay here.
 
-const ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+export { OPENROUTER_JEV_MODEL, jevConnection } from "./jev-connection.mjs";
 /**
  * Pinned rather than `jev-latest`, so the tuned threshold cannot shift when a
  * new release ships. `jev-latest` resolved to this version on 2026-09-23.
@@ -24,15 +25,15 @@ function readNoul(body: unknown): number | null {
 }
 
 export async function evaluateCount(scene: Scene, utterance: string, signal: AbortSignal): Promise<JevOutcome> {
-  const key = process.env.TYPESAFE_API_KEY;
-  if (!key) return { ok: false, reason: "unconfigured" };
+  const connection = jevConnection();
+  if (!connection) return { ok: false, reason: "unconfigured" };
   let response: Response;
   try {
-    response = await fetch(ENDPOINT, {
+    response = await fetch(connection.endpoint, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${connection.key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: JEV_MODEL,
+        model: connection.model,
         state: answerState(scene, utterance),
         questions: { [ANSWER_QUESTION_ID]: ANSWER_QUESTION },
       }),
@@ -47,5 +48,5 @@ export async function evaluateCount(scene: Scene, utterance: string, signal: Abo
   const probability = readNoul(body);
   if (probability === null) return { ok: false, reason: "unreadable" };
   const model = (body as { model?: unknown }).model;
-  return { ok: true, probability, model: typeof model === "string" ? model : JEV_MODEL };
+  return { ok: true, probability, model: typeof model === "string" ? model : connection.model };
 }

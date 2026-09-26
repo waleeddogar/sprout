@@ -5,14 +5,13 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import nextEnv from "@next/env";
+import { jevConnection } from "../lib/jev-connection.mjs";
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
-const key = process.env.TYPESAFE_API_KEY;
-if (!key) throw new Error("TYPESAFE_API_KEY is unavailable; configure the local app environment first.");
-
-const endpoint = "https://api.typesafe.ai/v1/systemone";
-const model = "jev-1.13.0";
+const connection = jevConnection();
+if (!connection) throw new Error("Configure TYPESAFE_API_KEY, or JEV_PROVIDER=openrouter with OPENROUTER_API_KEY.");
+const { key, endpoint, model } = connection;
 const questionId = "countedDisplayed";
 // Kept in sync with lib/answer.ts; the benchmark asserts the exact wire values.
 const question = {

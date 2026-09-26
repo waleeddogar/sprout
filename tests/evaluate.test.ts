@@ -7,7 +7,7 @@ import {
   MAX_UTTERANCE_CHARS,
   fetchEvaluateAnswer,
 } from "../lib/answer";
-import { JEV_MODEL, answerState } from "../lib/jev";
+import { JEV_MODEL, OPENROUTER_JEV_MODEL, answerState, jevConnection } from "../lib/jev";
 import { SCENES, sceneAt } from "../lib/lesson";
 
 const request = (body: unknown, origin = "http://localhost:3000", host = "localhost:3000") =>
@@ -84,7 +84,37 @@ describe("local answer evaluation endpoint", () => {
       questions: { [ANSWER_QUESTION_ID]: ANSWER_QUESTION },
     });
   });
+  it("routes the same Noul question to OpenRouter's System One endpoint with only its key", async () => {
+    vi.stubEnv("JEV_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "openrouter-test-key");
+    vi.stubEnv("TYPESAFE_API_KEY", "");
+    const fetch = answered(0.94, OPENROUTER_JEV_MODEL);
+    vi.stubGlobal("fetch", fetch);
+    const response = await POST(request({ sceneIndex: 2, utterance: "Three!" }));
+    expect(await response.json()).toEqual({ probability: 0.94, model: OPENROUTER_JEV_MODEL });
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://openrouter.ai/api/v1/systemone");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer openrouter-test-key");
+    expect(JSON.parse(init.body as string)).toEqual({
+      model: OPENROUTER_JEV_MODEL,
+      state: answerState(sceneAt(2), "Three!"),
+      questions: { [ANSWER_QUESTION_ID]: ANSWER_QUESTION },
+    });
+  });
+  it("never silently falls back to another paid provider when the selected key is missing", async () => {
+    vi.stubEnv("JEV_PROVIDER", "openrouter");
+    vi.stubEnv("OPENROUTER_API_KEY", "");
+    vi.stubEnv("TYPESAFE_API_KEY", "typesafe-key");
+    const fetch = vi.fn();
+    vi.stubGlobal("fetch", fetch);
+    const response = await POST(request(ask));
+    expect(response.status).toBe(503);
+    expect((await response.json()).error).toContain("OPENROUTER_API_KEY");
+    expect(fetch).not.toHaveBeenCalled();
+    expect(jevConnection({ JEV_PROVIDER: "typo", TYPESAFE_API_KEY: "typesafe-key" })).toBeNull();
+  });
   it("sends only the displayed scene and the recent utterance", () => {
+    expect(jevConnection({ TYPESAFE_API_KEY: "fixture" })?.model).toBe(JEV_MODEL);
     const state = answerState(sceneAt(2), "One, two, three!");
     expect(state).toEqual({
       displayed: { object: "butterflies", quantity: 3, description: "3 butterflies" },

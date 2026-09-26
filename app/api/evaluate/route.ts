@@ -30,6 +30,14 @@ export async function POST(request: Request) {
   const outcome = await evaluateCount(sceneAt(parsed.sceneIndex), parsed.utterance, request.signal);
   if (outcome.ok) return json({ probability: outcome.probability, model: outcome.model }, 200);
   if (outcome.reason === "unconfigured")
-    return json({ error: "Sprout needs TYPESAFE_API_KEY configured on this computer." }, 503);
+    return json(
+      {
+        error:
+          process.env.JEV_PROVIDER === "openrouter"
+            ? "Sprout needs OPENROUTER_API_KEY for Jev evaluation."
+            : "Sprout needs TYPESAFE_API_KEY configured on this computer.",
+      },
+      503,
+    );
   return json({ error: "The evaluation service did not answer." }, 502);
 }

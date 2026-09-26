@@ -19,6 +19,20 @@ voice transport (Pipecat), or graph queries that the session/evidence model cann
 answer clearly (Graphiti). Introducing them now would add maintenance without
 producing the missing parent judgments.
 
+## OpenRouter routing
+
+OpenRouter now has a [System One endpoint](https://openrouter.ai/docs/guides/community/typesafe-sdk)
+for Jev. Sprout can opt into `JEV_PROVIDER=openrouter` with an
+`OPENROUTER_API_KEY` for answer evaluation. It uses the same question and typed
+probability, subject to fresh threshold calibration for the pinned routed model.
+OpenRouter's [audio API](https://openrouter.ai/docs/guides/overview/multimodal/audio)
+and [speech API](https://openrouter.ai/docs/guides/overview/multimodal/tts) work
+with request/response audio, whereas the current lesson requires a WebRTC SDP
+exchange and live transcript/control events. Supporting an OpenRouter-only voice
+lesson would require a separate speech-to-text → conversation → speech pipeline,
+turn-taking policy and timing/interruptions regression suite. Substituting an
+OpenRouter key into the WebRTC request cannot implement those behaviors.
+
 A useful next model evaluation would label answer/support cases, reserve unseen
 cases before prompt tuning, and compare premature advancement, unavailable rate
 and latency under the same model/prompt conditions. Neither a high answer score
