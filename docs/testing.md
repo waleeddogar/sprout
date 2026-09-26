@@ -82,7 +82,22 @@ New domain/interaction experiments (#16/#26) should earn abstractions from real
 use. Do not replace the current controller with a general agent framework merely
 to make the test harness more generic.
 
-Issue #30 tracks reactive synthetic-speech testing through the real microphone and
-live provider path. The no-key demo and mocked CI suite do not implement or replace
-that billed experiment. Issue #29 tracks long-term memory architecture; the review
+PR #32 adds [reactive synthetic-speech testing](../scripts/live/REACTIVE.md) through
+the real microphone and live provider path for #30. The no-key demo and mocked CI
+suite complement that billed experiment. Both live harnesses now write an aggregate
+`session-report.json` beside their existing evidence. Issue #29 tracks long-term memory architecture; the review
 contract adds evidence gates without selecting a graph database or memory vendor.
+
+## Reporting and repeatable local UI usage
+
+[Measurement definitions and live smoke instructions](measurement.md) describe the
+rates, missing data and product outcomes. To collect repeated no-key UI exports:
+
+```sh
+SPROUT_USAGE_OUT=test-results/demo-usage npm run test:browser -- tests/browser/demo.spec.ts --repeat-each 5 --workers 1
+npm run report:sessions -- test-results/demo-usage/*.json --out test-results/demo-summary.json
+```
+
+Use a fresh output directory for each batch. These are real browser interactions
+with synthetic answers and no providers; their timings must not be presented as
+live latency or learning evidence.

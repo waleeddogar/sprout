@@ -107,3 +107,16 @@ This prototype binds to loopback and has no user accounts. The local-request che
 is not authentication. Public/multi-family hosting requires a separate deployment
 and access-control design; the default starter's public-deploy guidance does not
 apply.
+
+For session reliability metrics, bounded live checks and the seven-day product decision,
+see [measurement](docs/measurement.md). The [framework comparison](docs/evaluation-frameworks.md)
+explains why this contribution extends the existing test stack.
+
+## Live lesson regression testing
+
+See [Reactive simulated-child E2E](scripts/live/REACTIVE.md) for requirements,
+scenarios, artifacts and measurement limits. With the local app configured and
+running, `npm run test:live:reactive happy-path` runs one scenario;
+`npm run test:live:reactive` runs all ten sequentially. These use billed real
+GPT-Live/Jev services and supplement deterministic unit/browser tests.
+The legacy fixed-timeline command remains `npm run test:live quick_answer`.

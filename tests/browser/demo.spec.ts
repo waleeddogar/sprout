@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { summarizeSessions } from "../../lib/session-metrics";
+import { writeFileSync, mkdirSync } from "node:fs";
 
-test("preview uses the real lesson controller without microphone or provider requests", async ({ page }) => {
+test("preview uses the real lesson controller without microphone or provider requests", async ({ page }, testInfo) => {
   const requests: string[] = [];
   await page.route("**/api/**", route => {
     requests.push(route.request().url());
@@ -34,4 +36,18 @@ test("preview uses the real lesson controller without microphone or provider req
   expect(report).toMatchObject({ schemaVersion: 1, mode: "synthetic_demo", ending: "parent_stop", droppedEvents: 0 });
   expect(report.events.some((event: { type: string }) => event.type === "scene.displayed")).toBe(true);
   expect(requests).toEqual([]);
+  const summary = summarizeSessions([report]);
+  expect(summary.cohorts[0]).toMatchObject({
+    mode: "synthetic_demo",
+    completeDiagnosticExports: 1,
+    startupSuccess: { numerator: 1, denominator: 1, value: 1 },
+    evaluatorUnavailable: { numerator: 0, denominator: 2, value: 0 },
+    turnEndToDisplayMs: { n: 2 },
+  });
+  await testInfo.attach("session-report", { body: JSON.stringify(summary, null, 2), contentType: "application/json" });
+  // Opt-in exports let a repeated UI run exercise the same CLI used for real reports.
+  if (process.env.SPROUT_USAGE_OUT) {
+    mkdirSync(process.env.SPROUT_USAGE_OUT, { recursive: true });
+    writeFileSync(`${process.env.SPROUT_USAGE_OUT}/demo-${testInfo.repeatEachIndex}.json`, JSON.stringify(report));
+  }
 });
