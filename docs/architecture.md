@@ -2,6 +2,8 @@
 
 This document translates the [PRD](sprout-mvp-prd.md) into implementation boundaries. Most sections describe the proposed design; the first Convex persistence slice is identified below. Product requirements live in the PRD and are linked rather than restated here; terms are defined in [CONTEXT.md](../CONTEXT.md).
 
+For the implemented pure review contract, synthetic examples and the remaining persistence integration, see [Reviewed memory](reviewed-memory.md). The live voice lesson still has no durable learning memory.
+
 ## 1. Components and authority
 
 | Component | Responsibility | Authority boundary |

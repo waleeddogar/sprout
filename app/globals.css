@@ -23,6 +23,25 @@ button {
   cursor: pointer;
   font: inherit;
 }
+.demo-banner {
+  text-align: center;
+  font-size: 14px;
+  padding: 12px;
+  background: #e5ebd7;
+  border-radius: 12px;
+}
+.demo-controls {
+  text-align: center;
+  max-width: 580px;
+  margin: 24px auto;
+}
+.demo-controls button {
+  border: 1px solid #719347;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 6px;
+  background: #f7f5ec;
+}
 button:focus-visible,
 summary:focus-visible {
   outline: 3px solid #a87722;

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchEvaluateAnswer } from "@/lib/answer";
 import { ConvexSessionRecorder } from "@/lib/convex-session-recorder";
 import { BrowserTransport } from "@/lib/browser-transport";
+import { DemoTransport, evaluateDemoAnswer } from "@/lib/demo-transport";
 import { OBJECTS, objectName, sceneAt } from "@/lib/lesson";
 import { LessonSession, type Diagnostic, type Snapshot } from "@/lib/session";
 import { SessionInspector } from "./session-inspector";
@@ -23,7 +24,7 @@ function Scene({ index }: { index: number }) {
   );
 }
 
-export default function Lesson({ debug }: { debug: boolean }) {
+export default function Lesson({ debug, demo = false }: { debug: boolean; demo?: boolean }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [diagnosticEvents, setDiagnosticEvents] = useState<readonly Diagnostic[]>([]);
   const [endedAttempt, setEndedAttempt] = useState<{ ref?: DurableSessionRef; reader: SessionRecordReader } | null>(
@@ -31,6 +32,7 @@ export default function Lesson({ debug }: { debug: boolean }) {
   );
   const audio = useRef<HTMLAudioElement>(null);
   const session = useRef<LessonSession | null>(null);
+  const preview = useRef<DemoTransport | null>(null);
   const live = snapshot !== null && snapshot.status !== "ended";
 
   useEffect(() => {
@@ -63,14 +65,18 @@ export default function Lesson({ debug }: { debug: boolean }) {
   function start(retryOf?: DurableSessionRef) {
     if (!audio.current || (session.current && session.current.snapshot.status !== "ended")) return;
     session.current?.dispose();
-    const recorder = new ConvexSessionRecorder();
+    const recorder = demo ? undefined : new ConvexSessionRecorder();
+    preview.current = demo ? new DemoTransport() : null;
+    const previousAttemptId = session.current?.attemptId;
+    setEndedAttempt(null);
     const current = new LessonSession(
-      new BrowserTransport(audio.current),
-      fetchEvaluateAnswer,
+      preview.current ?? new BrowserTransport(audio.current),
+      demo ? evaluateDemoAnswer : fetchEvaluateAnswer,
       snapshot => {
         if (session.current === current) {
           setSnapshot(snapshot);
-          if (snapshot.status === "ended") setEndedAttempt({ ref: snapshot.durableSessionRef, reader: recorder });
+          if (snapshot.status === "ended" && recorder)
+            setEndedAttempt({ ref: snapshot.durableSessionRef, reader: recorder });
         }
       },
       () => {
@@ -78,6 +84,7 @@ export default function Lesson({ debug }: { debug: boolean }) {
       },
       recorder,
       retryOf,
+      { mode: demo ? "synthetic_demo" : "live", previousAttemptId },
     );
     session.current = current;
     setDiagnosticEvents([]);
@@ -105,6 +112,9 @@ export default function Lesson({ debug }: { debug: boolean }) {
       <header className="brand">
         <span aria-hidden="true">✳</span> sprout
       </header>
+      {demo && (
+        <p className="demo-banner">Developer preview · Synthetic answers · No microphone, voice, or API calls</p>
+      )}
       {live ? (
         <>
           <button className="end-button" onClick={() => session.current?.end("parent_stop")}>
@@ -121,6 +131,16 @@ export default function Lesson({ debug }: { debug: boolean }) {
               </p>
             ) : (
               <Scene index={snapshot.sceneIndex} />
+            )}
+            {demo && snapshot.status === "active" && (
+              <section className="demo-controls" aria-label="Synthetic answers">
+                <p>Try a number, then wait for the scene. Use End lesson when finished.</p>
+                {[1, 2, 3, 4, 5].map(quantity => (
+                  <button key={quantity} onClick={() => preview.current?.answer(quantity)}>
+                    Try {quantity}
+                  </button>
+                ))}
+              </section>
             )}
           </section>
         </>
@@ -140,7 +160,9 @@ export default function Lesson({ debug }: { debug: boolean }) {
             <p className="intro">
               {snapshot
                 ? "The microphone and voice playback are off."
-                : "A gentle counting adventure with Sprout. Just your voice, a few little friends, and room to think."}
+                : demo
+                  ? "Explore the counting scenes with scripted number buttons. This preview does not evaluate speech or demonstrate learning."
+                  : "A gentle counting adventure with Sprout. Just your voice, a few little friends, and room to think."}
             </p>
           )}
           {snapshot?.reason === "page_hidden" && (
@@ -154,10 +176,15 @@ export default function Lesson({ debug }: { debug: boolean }) {
           </button>
           <div className="parent-note">
             <p>For a parent and child · About 5 minutes · Quantities 1–5</p>
-            <p>
+            <p hidden={demo}>
               Stay together, allow the microphone, and keep this tab visible. Sprout is an AI voice; audio is sent to
               OpenAI during play and retained in Sprout’s private session record for review. You can end at any time.
             </p>
+            {!demo && (
+              <p>
+                <a href="/demo">Try the developer preview without API keys</a>
+              </p>
+            )}
           </div>
           {endedAttempt && (
             <SessionInspector

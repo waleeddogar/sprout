@@ -2,6 +2,9 @@
   "name": "sprout-mvp",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "convex:dev": "convex dev",
@@ -11,6 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm test && npm run demo:memory",
+    "demo:memory": "node scripts/memory-demo.mjs",
     "test:browser": "playwright test",
     "test:jev": "node scripts/jev-calibration.mjs",
     "benchmark:jev": "node scripts/jev-latency.mjs",

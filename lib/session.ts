@@ -113,6 +113,7 @@ type AnswerResponseGate = {
 };
 
 export class LessonSession {
+  readonly attemptId = crypto.randomUUID();
   snapshot: Snapshot = { status: "starting", sceneIndex: 0 };
   readonly events: Diagnostic[] = [];
   readonly createdAt = Date.now();
@@ -257,6 +258,8 @@ export class LessonSession {
       UTTERANCE_GAP_MS,
     );
   }
+  private finalized = false;
+  private droppedEvents = 0;
 
   constructor(
     private transport: Transport,
@@ -265,6 +268,7 @@ export class LessonSession {
     private diagnosticChanged?: () => void,
     private recorder?: SessionRecorder,
     private retryOf?: DurableSessionRef,
+    private metadata: { mode?: "live" | "synthetic_demo"; previousAttemptId?: string } = {},
   ) {}
 
   private get scene() {
@@ -278,7 +282,10 @@ export class LessonSession {
 
   log(type: string, detail?: unknown) {
     // Bounded, in-memory prototype diagnostics; no raw audio or SDP.
-    if (this.events.length >= 8000) this.events.shift();
+    if (this.events.length >= 8000) {
+      this.events.shift();
+      this.droppedEvents++;
+    }
     this.events.push({ at: Date.now() - this.createdAt, type, detail });
     if (type.startsWith("answer.") || type.startsWith("advance.") || type === "scene.displayed")
       this.diagnosticChanged?.();
@@ -346,6 +353,8 @@ export class LessonSession {
   receive(event: ProviderEvent) {
     // Finalization is accepted after ending, but no further model work is.
     if (event.type === "session.closed") {
+      if (this.finalized || this.closed) return;
+      this.finalized = true;
       this.log("connection.finalized", { reason: event.reason, usage: event.usage });
       if (this.snapshot.status !== "ended")
         this.fail("The voice service ended this attempt. You can start a new lesson.");
@@ -1334,6 +1343,11 @@ export class LessonSession {
 
   report(browser: string) {
     return {
+      schemaVersion: 1,
+      attemptId: this.attemptId,
+      previousAttemptId: this.metadata.previousAttemptId ?? null,
+      mode: this.metadata.mode ?? "live",
+      droppedEvents: this.droppedEvents,
       model: MODEL,
       promptVersion: PROMPT_VERSION,
       createdAt: new Date(this.createdAt).toISOString(),
@@ -1341,7 +1355,7 @@ export class LessonSession {
       ending: this.snapshot.reason,
       browser,
       note: "Prototype diagnostics only. Transcript timing is approximate; speaker identity and audio delivery are unverified. This download excludes the separately retained session audio and contains no learning conclusions.",
-      events: [...this.events],
+      events: structuredClone(this.events),
     };
   }
 }

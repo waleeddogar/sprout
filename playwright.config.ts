@@ -5,15 +5,25 @@ export default defineConfig({
   // Playwright empties this directory on every run, so it must not be the one
   // the experiment scripts write their evidence to.
   outputDir: "./test-results/playwright",
+  forbidOnly: Boolean(process.env.CI),
+  workers: process.env.CI ? 1 : undefined,
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://127.0.0.1:3100",
     viewport: { width: 1440, height: 1000 },
     permissions: ["microphone"],
+    trace: "retain-on-failure",
     launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] },
   },
   webServer: {
     command: "npm run dev -- --port 3100",
     url: "http://127.0.0.1:3100",
-    reuseExistingServer: !process.env.CI,
+    // Always start the isolated fixture server, never reuse a live local lesson.
+    reuseExistingServer: false,
+    env: {
+      OPENAI_API_KEY: "",
+      TYPESAFE_API_KEY: "",
+      NEXT_PUBLIC_CONVEX_URL: "https://sprout-browser-test.convex.cloud",
+    },
   },
 });

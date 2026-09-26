@@ -33,7 +33,8 @@ export type ClientCommand =
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
 const text = (value: unknown) => (typeof value === "string" ? value : undefined);
-const number = (value: unknown) => (typeof value === "number" ? value : undefined);
+const number = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined;
 
 /** Returns null for events this app does not act on, including malformed ones. */
 export function parseProviderEvent(raw: unknown): ProviderEvent | null {
@@ -52,7 +53,15 @@ export function parseProviderEvent(raw: unknown): ProviderEvent | null {
       const delta = raw.delta;
       const startMs = raw.start_ms;
       const endMs = raw.end_ms;
-      if (typeof delta !== "string" || typeof startMs !== "number" || typeof endMs !== "number") return null;
+      if (
+        typeof delta !== "string" ||
+        typeof startMs !== "number" ||
+        typeof endMs !== "number" ||
+        number(startMs) === undefined ||
+        number(endMs) === undefined ||
+        endMs < startMs
+      )
+        return null;
       const speaker: Speaker = raw.type === "session.input_transcript.delta" ? "child" : "sprout";
       return { type: "transcript", eventId, speaker, delta, startMs, endMs };
     }
