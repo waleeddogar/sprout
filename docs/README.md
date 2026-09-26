@@ -27,3 +27,6 @@ Evidence supports the learning value of several of these mechanisms individually
 The PRD owns product requirements. The architecture document describes how to enforce them; the protocol defines how to evaluate them. The glossary contains terminology, and ADRs preserve decisions and their trade-offs.
 
 The repository contains the voice prototype: one hardcoded GPT-Live-1 counting lesson with in-tab diagnostics. A [synthetic preview and setup guide](../README.md), [testing strategy](testing.md), and [executable reviewed-memory boundary](reviewed-memory.md) support development. Durable session evidence, full-session audio and inspection are implemented. Parent-review UI and live planning flows are not yet implemented.
+
+[Session measurement](measurement.md), [framework choices](evaluation-frameworks.md),
+and [PR 33 validation](pr-33-validation.md) describe the reporting path and its evidence limits.

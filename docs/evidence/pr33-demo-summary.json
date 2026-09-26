@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "imported": 5,
+  "duplicateExportsExcluded": 0,
+  "unidentifiableExports": 0,
+  "cohorts": [
+    {
+      "mode": "synthetic_demo",
+      "model": "gpt-live-1",
+      "promptVersion": "counting-jev-4",
+      "attempts": 5,
+      "completeDiagnosticExports": 5,
+      "excludedIncompleteExports": 0,
+      "observedRecordingFailureAttempts": 0,
+      "observedProviderFailureAttempts": 0,
+      "unfinishedExports": 0,
+      "startupSuccess": {
+        "numerator": 5,
+        "denominator": 5,
+        "value": 1
+      },
+      "confirmedFinalization": {
+        "numerator": 5,
+        "denominator": 5,
+        "value": 1
+      },
+      "evaluatorUnavailable": {
+        "numerator": 0,
+        "denominator": 10,
+        "value": 0
+      },
+      "staleEvaluationsExcluded": 0,
+      "startupMs": {
+        "n": 5,
+        "p50": 0,
+        "p95": 1,
+        "max": 1
+      },
+      "activeDurationMs": {
+        "n": 5,
+        "p50": 8824,
+        "p95": 8847,
+        "max": 8847
+      },
+      "evaluatorLatencyMs": {
+        "n": 10,
+        "p50": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "turnEndToDisplayMs": {
+        "n": 10,
+        "p50": 2517,
+        "p95": 2520,
+        "max": 2520
+      },
+      "audibleResponseLatencyMs": null,
+      "cost": null,
+      "learningOutcome": null,
+      "parentRepairMinutes": null
+    }
+  ]
+}
